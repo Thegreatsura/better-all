@@ -2299,6 +2299,53 @@ describe('flow', () => {
     })
   })
 
+  describe('$end() with pending dependency resolvers', () => {
+    it('should not hang when $end() is called and other tasks are waiting on the ended task', async () => {
+      const f = await flow<undefined>({
+        async anonId() {
+          const anonId = null // simulate no anon ID
+          if (!anonId) {
+            this.$end(undefined)
+          }
+          return anonId!
+        },
+        async ip() {
+          return 'ip-value'
+        },
+        async claimChats() {
+          await this.$.anonId
+          return 'claimed'
+        },
+        async deleteId() {
+          await this.$.anonId
+          return 'deleted'
+        },
+        async track() {
+          await this.$.anonId
+          await this.$.ip
+          return 'tracked'
+        },
+      })
+
+      expect(f).toBeUndefined()
+    }, 1000) // 1s timeout - will fail if deadlocked
+
+    it('should not hang when $end() is called before dependent tasks call waitForDep', async () => {
+      const f = await flow<string>({
+        async fast() {
+          this.$end('done')
+        },
+        async slow() {
+          await sleep(50) // sleep so fast() has already called $end
+          await this.$.fast // should not hang
+          return 'slow-result'
+        },
+      })
+
+      expect(f).toBe('done')
+    }, 1000)
+  })
+
   describe('External signal integration', () => {
     it('should respect external abort signal', async () => {
       const controller = new AbortController()
