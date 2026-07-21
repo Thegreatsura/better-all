@@ -368,7 +368,9 @@ function executeTasksInternal<T extends Record<string, any>>(
       // In flow mode, handle FlowEndError and FlowAbortedError specially
       if (options.flowMode) {
         if (err instanceof FlowEndError) {
-          // This is intentional early exit, don't propagate as error
+          // This is intentional early exit, don't propagate as error.
+          // Reject pending resolvers so dependent tasks don't hang forever.
+          handleError(name, new FlowAbortedError())
           return
         }
         if (err instanceof FlowAbortedError) {
