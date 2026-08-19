@@ -540,7 +540,9 @@ export function allSettled<T extends Record<string, any>>(
       }
       $signal: AbortSignal
     }> & {
-      [P in keyof T]: T[P] extends (...args: any[]) => any ? T[P] : never
+      [K in keyof T as T[K] extends Function
+        ? K
+        : `Error: task \`${K & string}\` is not a function`]-?: T[K]
     },
   options?: ExecutionOptions,
 ): Promise<AllSettledResult<T>> {
