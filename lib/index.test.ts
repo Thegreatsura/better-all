@@ -747,12 +747,16 @@ describe('allSettled', () => {
         async c() {
           return true
         },
+        async d() {
+          return (await this.$.a) + 1
+        }
       })
 
       expect(result).toEqual({
         a: { status: 'fulfilled', value: 1 },
         b: { status: 'fulfilled', value: 'hello' },
         c: { status: 'fulfilled', value: true },
+        d: { status: 'fulfilled', value: 2 },
       })
     })
 
@@ -785,6 +789,7 @@ describe('allSettled', () => {
         },
         async b() {
           const aValue = await this.$.a
+          expectTypeOf(aValue).toEqualTypeOf<number>()
           return aValue + 10
         },
       })
